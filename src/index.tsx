@@ -1,18 +1,38 @@
 import "./styles.scss";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { Machine, assign, send, State } from "xstate";
+import { Action, Machine, assign, send, State, MachineConfig } from "xstate";
 import { useMachine, asEffect } from "@xstate/react";
 import { inspect } from "@xstate/inspect";
-import { dmMachine } from "./dmColourChanger";
-
+import { dmMachineMain } from "./dmMain";
+import { useSpeechSynthesis, useSpeechRecognition } from 'react-speech-kit';
 
 inspect({
     url: "https://statecharts.io/inspect",
     iframe: false
 });
 
-import { useSpeechSynthesis, useSpeechRecognition } from 'react-speech-kit';
+export function promptAndAsk(prompt: string): MachineConfig<SDSContext, any, SDSEvent> {
+    return ({
+	initial: 'prompt',
+	states: {
+            prompt: {
+                entry: say(prompt),
+                on: { ENDSPEECH: 'ask' }
+            },
+            ask: {
+		        entry: send('LISTEN'),
+            }
+	}})
+}
+
+export function say(text: string): Action<SDSContext, SDSEvent> {
+    return send((_context: SDSContext) => ({ type: "SPEAK", value: text }))
+}
+
+export function listen(): Action<SDSContext, SDSEvent> {
+    return send('LISTEN')
+}
 
 
 const machine = Machine<SDSContext, any, SDSEvent>({
@@ -20,7 +40,7 @@ const machine = Machine<SDSContext, any, SDSEvent>({
     type: 'parallel',
     states: {
         dm: {
-            ...dmMachine
+            ...dmMachineMain
         },
         asrtts: {
             initial: 'idle',
@@ -35,6 +55,7 @@ const machine = Machine<SDSContext, any, SDSEvent>({
                     }
                 },
                 recognising: {
+		    initial: 'progress',
                     entry: 'recStart',
                     exit: 'recStop',
                     on: {
@@ -46,6 +67,8 @@ const machine = Machine<SDSContext, any, SDSEvent>({
                         RECOGNISED: 'idle'
                     },
                     states: {
+		    	progress: {
+			},	    					
                         match: {
                             entry: send('RECOGNISED'),
                         },
@@ -159,19 +182,6 @@ function App() {
     )
 };
 
-
-
-/* RASA API
- *  */
-const proxyurl = "https://cors-anywhere.herokuapp.com/";
-const rasaurl = 'https://rasa-nlu-api-00.herokuapp.com/model/parse'
-const nluRequest = (text: string) =>
-    fetch(new Request(proxyurl + rasaurl, {
-        method: 'POST',
-        headers: { 'Origin': 'http://maraev.me' }, // only required with proxy
-        body: `{"text": "${text}"}`
-    }))
-        .then(data => data.json());
 
 const rootElement = document.getElementById("root");
 ReactDOM.render(
