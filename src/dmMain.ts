@@ -3,6 +3,12 @@ import { promptAndAsk } from "./index";
 import { dmMachine } from "./dmAppointment";
 import { dmMachineTodo } from "./dmTodo";
 import { dmMachineTimer } from "./dmTimer";
+import { dmMachineHome } from "./dmSmartHome";
+
+import { loadGrammar } from './runparser'
+import { parse } from './chartparser'
+import { gramm } from './grammars/funnyGrammar'
+
 
 // RASA API
 const proxyurl = "https://cors-anywhere.herokuapp.com/";
@@ -15,6 +21,12 @@ export const nluRequest = (text: string) =>
     }))
         .then(data => data.json());
 
+const gram = loadGrammar(gramm)
+const input = "to do is to be"
+const prs = parse(input.split(/\s+/), gram)
+const result = prs.resultsForRule(gram.$root)[0]
+
+console.log(result) //accessed in the machine via ${result.quote.source} 
 
 export const dmMachineMain: MachineConfig<SDSContext, any, SDSEvent> = ({
     initial: 'init',
@@ -55,7 +67,8 @@ export const dmMachineMain: MachineConfig<SDSContext, any, SDSEvent> = ({
                     { target: 'appointment', cond: (context) => context.intent === 'appointment' },
                     { target: 'item', cond: (context) => context.intent === 'todo_item' },
                     { target: 'timer', cond: (context) => context.intent === 'timer' },
-                    { target: 'welcome' }]
+                    { target: 'smart_home', cond: (context) => context.intent === 'smart_home' },
+                    { target: 'welcome' }] 
                 } 
         },
         appointment: {
@@ -66,6 +79,9 @@ export const dmMachineMain: MachineConfig<SDSContext, any, SDSEvent> = ({
         },
         timer: {
             ...dmMachineTimer
+        },
+        smart_home: {
+            ...dmMachineHome
         }
     }
 })

@@ -14,7 +14,8 @@ interface SDSContext {
     day: string,
     statement: string,
     intent: string,
-    duration: string
+    duration: string,
+    rule: string
 }
 
 type SDSEvent =
