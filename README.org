@@ -1,5 +1,7 @@
-* Colour changer (React + xstate + Webspeech API)
-To run:
+* Voice-based Task Manager 
+** (Calendar, SmartHome, Timer, TODO List) 
+
+To run: :speech_balloon:
 #+begin_src sh
   npm install
   npm start
