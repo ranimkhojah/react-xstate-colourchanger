@@ -7,12 +7,11 @@ import { loadGrammar } from './runparser'
 import { parse } from './chartparser'
 import { grammar } from './grammars/homeGrammar'
 
-
+/* funnyGrammar test */
 // const gram = loadGrammar(grammar)
 // const input = "to do is to be"
 // const prs = parse(input.split(/\s+/), gram)
 // const result = prs.resultsForRule(gram.$root)[0]
-
 // console.log(result) //accessed in the machine via ${result.quote.source} 
 
 export const getRuleObj = (input: string) => {
@@ -38,7 +37,6 @@ export const dmMachineHome: MachineConfig<SDSContext, any, SDSEvent> = ({
             on: {
                 RECOGNISED: {
                     target: 'perform',
-                    
                     actions: assign((context) => {return { rule: getRuleObj(context.recResult) } })
                         }
                     },

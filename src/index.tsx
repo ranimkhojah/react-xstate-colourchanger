@@ -1,11 +1,13 @@
 import "./styles.scss";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { Action, Machine, assign, send, State, MachineConfig } from "xstate";
+import { Action, Machine, assign, send, actions, State, MachineConfig } from "xstate";
 import { useMachine, asEffect } from "@xstate/react";
 import { inspect } from "@xstate/inspect";
 import { dmMachineMain } from "./dmMain";
 import { useSpeechSynthesis, useSpeechRecognition } from 'react-speech-kit';
+// import { cancel } from "xstate/lib/actionTypes";
+const {cancel} = actions
 
 inspect({
     url: "https://statecharts.io/inspect",
@@ -64,7 +66,8 @@ const machine = Machine<SDSContext, any, SDSEvent>({
                                 assign((_context, event) => { return { recResult: event.value } })],
                             target: '.match'
                         },
-                        RECOGNISED: 'idle'
+                        RECOGNISED: {target:'idle',actions: [cancel('timeout'),  assign((context)=>{return {count: Number(0)}})]}, // target idel and actions cancel
+                        MAXSPEECH: 'idle'
                     },
                     states: {
 		    	progress: {

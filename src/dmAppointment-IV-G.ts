@@ -26,15 +26,10 @@ export function prompt(prompt:string): MachineConfig<SDSContext, any, SDSEvent> 
                 entry: say(prompt)
             }
         }})}
-const tokenize = function (sentence: string) {
-    return sentence.trim().split(" ");
-};
 
 const grammar: { [index: string]: { person?: string, day?: string, meeting_time?: string } } = {
     //names
     "John": { person: "John Appleseed" }, 
-    "Bob": { person: "Bob Marley" }, 
-    "Bill": { person: "Bill Gates" }, 
     "Charlie": { person: "Charlie Spencer" }, 
     "Angela": { person: "Angela Martin" }, 
     "Michael": { person: "Michael Scott" }, 
@@ -45,13 +40,6 @@ const grammar: { [index: string]: { person?: string, day?: string, meeting_time?
     "Toby": { person: "Toby Flenderson" }, 
     
     //day
-    "Saturday": { day: "Saturday" },
-    "Sunday": { day: "Sunday" },
-    "Monday": { day: "Monday" },
-    "Tuesday": { day: "Tuesday" },
-    "Wednesday": { day: "Wednesday" },
-    "Thursday": { day: "Thursday" },
-    "Friday": { day: "Friday" },
     "on Saturday": { day: "Saturday" },
     "on Sunday": { day: "Sunday" },
     "on Monday": { day: "Monday" },
@@ -59,21 +47,9 @@ const grammar: { [index: string]: { person?: string, day?: string, meeting_time?
     "on Wednesday": { day: "Wednesday" },
     "on Thursday": { day: "Thursday" },
     "on Friday": { day: "Friday" },
+    "tomorrow": { day: "tomorrow" },
 
     //time
-    "1": { meeting_time: "one" },
-    "2": { meeting_time: "two" },
-    "3": { meeting_time: "three" },
-    "4": { meeting_time: "four" },
-    "5": { meeting_time: "five" },
-    "6": { meeting_time: "six" },
-    "7": { meeting_time: "seven" },
-    "8": { meeting_time: "eight" },
-    "9": { meeting_time: "nine" },
-    "10": { meeting_time: "ten" },
-    "11": { meeting_time: "eleven" },
-    "12": { meeting_time: "twelve" },
-    "noon": { meeting_time: "twelve" },
     "at 1": { meeting_time: "one" },
     "at 2": { meeting_time: "two" },
     "at 3": { meeting_time: "three" },
@@ -84,10 +60,7 @@ const grammar: { [index: string]: { person?: string, day?: string, meeting_time?
     "at 8": { meeting_time: "eight" },
     "at 9": { meeting_time: "nine" },
     "at 10": { meeting_time: "ten" },
-    "at 11": { meeting_time: "eleven" },
-    "at 12": { meeting_time: "twelve" },
-    "at noon": { meeting_time: "twelve" }
-
+    "at 11": { meeting_time: "eleven" }
 }
 
 const boolGrammar: { [index: string]: { string_bool?: string}}={
@@ -110,7 +83,7 @@ const boolGrammar: { [index: string]: { string_bool?: string}}={
     "not sure": {string_bool: 'no'},
 }
 
-const help_commands = ["help", "I don't know", "I don't understand", "help me", "I need help", "what does this mean", "wait what", "no wait", "what do you mean", "what the hell"]
+const help_commands = ["help", "I don't know", "help me", "I need help", "what does this mean", "wait what", "what do you mean"]
 
 export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
     initial: 'welcome',
@@ -141,30 +114,15 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
                 cond: (context) => context.count == null,
                 actions: assign((context)=>{return {count: Number(0)}}),
                 target: 'maxspeech'
+
             }],
             },
             states:{
-                hist: {type: 'history'},
+                hist:{type: 'history'},
                 who: {
-                    ...Prompt_Nomatch_Timeout("Who are you meeting with?", "Sorry I don't know them", 7000), //more delay because it takes some extra time to say everything at once
+                    ...Prompt_Nomatch_Timeout("Who are you meeting with?", "Sorry I don't know them"),
                     on: {
                         RECOGNISED: [{
-                            cond: (context) =>  context.recResult.includes("at") && context.recResult.includes("on") && tokenize(context.recResult).indexOf("at") == 1 && tokenize(context.recResult).indexOf("on") == 3 && "person" in (grammar[tokenize(context.recResult)[0]] || {}) &&  "meeting_time" in (grammar[tokenize(context.recResult)[2]] || {}) && "day" in (grammar[tokenize(context.recResult)[4]] || {}),
-                            actions: [assign((context) => { return { person: tokenize(context.recResult)[0] }}),assign((context) => { return { day: tokenize(context.recResult)[4] }}),assign((context) => { return { meeting_time: tokenize(context.recResult)[2] }})],
-                            target: "confirm_time"
-                        },{
-                            cond: (context) =>  context.recResult.includes("at") && context.recResult.includes("on") && "person" in (grammar[tokenize(context.recResult)[0]] || {}) &&  "meeting_time" in (grammar[tokenize(context.recResult)[4]] || {}) && "day" in (grammar[tokenize(context.recResult)[2]] || {}),
-                            actions: [assign((context) => { return { person: tokenize(context.recResult)[0] }}),assign((context) => { return { day: tokenize(context.recResult)[2] }}),assign((context) => { return { meeting_time: tokenize(context.recResult)[4] }})],
-                            target: "confirm_time"
-                        },{
-                            cond: (context) => context.recResult.includes("on") && "person" in (grammar[tokenize(context.recResult)[0]] || {})  && "day" in (grammar[tokenize(context.recResult)[2]] || {}),
-                            actions: [assign((context) => { return { person: tokenize(context.recResult)[0] }}),assign((context) => { return { day: tokenize(context.recResult)[2] }})],
-                            target: "whole_day"
-                        },{
-                            cond: (context) => context.recResult.includes("at") && "person" in (grammar[tokenize(context.recResult)[0]] || {})  && "meeting_time" in (grammar[tokenize(context.recResult)[2]] || {}),
-                            actions: [assign((context) => { return { person: tokenize(context.recResult)[0] }}),assign((context) => { return { meeting_time: tokenize(context.recResult)[2] }})],
-                            target: "day"
-                        },{
                             cond: (context) => "person" in (grammar[context.recResult] || {}),
                             actions: assign((context) => { return { person: grammar[context.recResult].person } }),
                             target: "day"
@@ -178,19 +136,6 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
                     ...Prompt_Nomatch_Timeout(`OK . what day is your meeting?`, "Sorry I don't understand"),
                     on: {
                         RECOGNISED: [{
-                            cond: (context) =>  context.recResult.includes("at") && context.recResult.includes("on") && tokenize(context.recResult).indexOf("at") == 2 &&  "meeting_time" in (grammar[tokenize(context.recResult)[3]] || {}) && "day" in (grammar[tokenize(context.recResult)[1]] || {}),
-                            actions: [assign((context) => { return { person: tokenize(context.recResult)[0] }}),assign((context) => { return { day: tokenize(context.recResult)[4] }}),assign((context) => { return { meeting_time: tokenize(context.recResult)[2] }})],
-                            target: "confirm_time"
-                        },{
-                            cond: (context) => context.meeting_time != null && "day" in (grammar[context.recResult] || {}),
-                            actions: [assign((context) => { return { day: context.recResult } })],
-                            target: "confirm_time"
-                        },{
-                            cond: (context) => "day" in (grammar[tokenize(context.recResult)[1]] || {}) && "whole" in tokenize(context.recResult) && "day" in tokenize(context.recResult),
-                            actions: assign((context) => { return { day: grammar[context.recResult].day } }),
-                            target: "confirm_whole"
-
-                        },{
                             cond: (context) => "day" in (grammar[context.recResult] || {}),
                             actions: assign((context) => { return { day: grammar[context.recResult].day } }),
                             target: "whole_day"
@@ -306,7 +251,7 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
 
         on: {
             'ENDSPEECH': {
-                actions: assign((context)=> { return {count: context.count + 1 }}),
+                actions: assign((context)=> {return {count: context.count+1 }}),
                 target: 'fill_appointment_info.hist'
             }
         }
@@ -315,8 +260,5 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
     help:{
         ...prompt("You are a big boy, you need no help"),
         on: {'ENDSPEECH': 'fill_appointment_info.hist'}
-    },
-    guards:{
-        
     }
     }})
